@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diktálás</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@1/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
+  <link rel="stylesheet" href="taskpane.css" />
+</head>
+<body>
+  <main>
+    <section class="row">
+      <label for="lang">Diktálás nyelve</label>
+      <select id="lang">
+        <option value="hu-HU">Magyar</option>
+        <option value="sk-SK">Slovenčina (szlovák)</option>
+      </select>
+    </section>
+
+    <button id="micBtn" class="mic" type="button" aria-pressed="false">
+      <span class="dot"></span><span id="micLabel">Diktálás indítása</span>
+    </button>
+
+    <p id="interim" class="interim" aria-live="polite"></p>
+
+    <label for="text">Szöveg (szabadon szerkeszthető)</label>
+    <textarea id="text" rows="10" placeholder="Nyomja meg a „Diktálás indítása” gombot, és kezdjen beszélni…"></textarea>
+
+    <section class="buttons">
+      <button id="toDe" type="button">Németre fordítás</button>
+      <button id="toEn" type="button">Angolra fordítás</button>
+      <button id="undo" type="button" disabled>Visszavonás</button>
+      <button id="clear" type="button">Törlés</button>
+    </section>
+
+    <button id="insertBtn" class="primary" type="button">Jóváhagyom – beszúrás az e-mailbe</button>
+
+    <p id="status" class="status" role="status"></p>
+
+    <details id="settings">
+      <summary>Beállítások (Azure-kulcsok)</summary>
+      <label for="speechKey">Azure Speech kulcs</label>
+      <input id="speechKey" type="password" autocomplete="off" />
+      <label for="speechRegion">Speech régió (pl. westeurope)</label>
+      <input id="speechRegion" type="text" placeholder="westeurope" />
+      <label for="trKey">Azure Translator kulcs (üresen hagyva a Speech kulcsot használja)</label>
+      <input id="trKey" type="password" autocomplete="off" />
+      <label for="trRegion">Translator régió (pl. westeurope)</label>
+      <input id="trRegion" type="text" placeholder="westeurope" />
+      <button id="saveSettings" type="button">Mentés</button>
+    </details>
+  </main>
+  <script src="taskpane.js"></script>
+</body>
+</html>
