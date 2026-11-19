@@ -6,7 +6,7 @@
   <title>Diktálás</title>
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@1/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
-  <link rel="stylesheet" href="taskpane.css" />
+  <link rel="stylesheet" href="taskpane.css?v=4" />
 </head>
 <body>
   <main>
@@ -21,6 +21,8 @@
     <button id="micBtn" class="mic" type="button" aria-pressed="false">
       <span class="dot"></span><span id="micLabel">Diktálás indítása</span>
     </button>
+
+    <button id="dialogBtn" class="link" type="button">Diktálás külön ablakban</button>
 
     <p id="interim" class="interim" aria-live="polite"></p>
 
@@ -51,7 +53,7 @@
       <button id="saveSettings" type="button">Mentés</button>
     </details>
   </main>
-  <p class="version">v3</p>
-  <script src="taskpane.js?v=3"></script>
+  <p class="version">v4</p>
+  <script src="taskpane.js?v=4"></script>
 </body>
 </html>

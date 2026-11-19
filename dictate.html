@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diktálás</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@1/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
+  <link rel="stylesheet" href="taskpane.css?v=4" />
+</head>
+<body>
+  <main>
+    <p id="langInfo" class="interim"></p>
+    <button id="micBtn" class="mic" type="button" aria-pressed="false">
+      <span class="dot"></span><span id="micLabel">Diktálás indítása</span>
+    </button>
+    <p id="interim" class="interim" aria-live="polite"></p>
+    <label for="text">Felismert szöveg</label>
+    <textarea id="text" rows="8"></textarea>
+    <button id="doneBtn" class="primary" type="button">Kész – szöveg átvitele a panelbe</button>
+    <p id="status" class="status" role="status"></p>
+  </main>
+  <script src="dictate.js?v=4"></script>
+</body>
+</html>

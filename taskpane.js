@@ -161,7 +161,12 @@
     try {
       await ensureMicPermission();
     } catch (e) {
-      setStatus("Mikrofon nem érhető el: " + (e.message || e), "error");
+      if (canOpenDialog()) {
+        setStatus("A panelben az Outlook nem engedi a mikrofont – külön ablakban nyitom meg a diktálást…", "");
+        openDialogDictation();
+      } else {
+        setStatus("Mikrofon nem érhető el: " + (e.message || e), "error");
+      }
       return;
     }
 
@@ -201,6 +206,62 @@
     r.stopContinuousRecognitionAsync(
       () => { r.close(); if (!els.status.classList.contains("error")) setStatus("Diktálás leállítva. Ellenőrizze a szöveget.", "ok"); },
       () => r.close()
+    );
+  }
+
+  // ---------- Diktálás külön ablakban (Office párbeszédablak) ----------
+  function canOpenDialog() {
+    return typeof Office !== "undefined" && Office.context && Office.context.ui &&
+      typeof Office.context.ui.displayDialogAsync === "function";
+  }
+
+  function openDialogDictation() {
+    const key = els.speechKey.value.trim();
+    const region = els.speechRegion.value.trim();
+    if (!key || !region) {
+      els.settings.open = true;
+      setStatus("Hiányzik az Azure Speech kulcs vagy régió.", "error");
+      return;
+    }
+    if (!canOpenDialog()) {
+      setStatus("A külön ablakos diktálás csak az Outlookban érhető el.", "error");
+      return;
+    }
+    // A kulcs nem kerül az URL-be: az ablak a közös tárolóból vagy üzenetben kapja meg.
+    localStorage.setItem("diktalas.speechKey", key);
+    localStorage.setItem("diktalas.speechRegion", region);
+    const url = new URL("dictate.html", location.href);
+    url.search = "?lang=" + encodeURIComponent(els.lang.value) + "&v=4";
+    Office.context.ui.displayDialogAsync(
+      url.toString(),
+      { height: 60, width: 35, displayInIframe: false, promptBeforeOpen: false },
+      (res) => {
+        if (res.status !== Office.AsyncResultStatus.Succeeded) {
+          setStatus("Nem sikerült megnyitni a diktáló ablakot: " + res.error.message +
+            " (Ha a böngésző felugró ablakot tiltott le, engedélyezze.)", "error");
+          return;
+        }
+        const dialog = res.value;
+        dialog.addEventHandler(Office.EventType.DialogMessageReceived, (arg) => {
+          let msg;
+          try { msg = JSON.parse(arg.message); } catch (_) { return; }
+          if (msg.type === "ready" && typeof dialog.messageChild === "function") {
+            dialog.messageChild(JSON.stringify({ type: "creds", key: key, region: region }));
+          } else if (msg.type === "text") {
+            dialog.close();
+            if (msg.text) {
+              pushHistory();
+              appendText(msg.text);
+              setStatus("A diktált szöveg bekerült. Ellenőrizze, majd szúrja be az e-mailbe.", "ok");
+            } else {
+              setStatus("A diktáló ablak üres szöveggel zárult.", "");
+            }
+          }
+        });
+        dialog.addEventHandler(Office.EventType.DialogEventReceived, () => {
+          if (!els.status.classList.contains("ok")) setStatus("A diktáló ablak bezárult.", "");
+        });
+      }
     );
   }
 
@@ -273,6 +334,7 @@
   // ---------- Eseménykezelők ----------
   function wire() {
     els.micBtn.addEventListener("click", () => (recognizer ? stopDictation() : startDictation()));
+    $("dialogBtn").addEventListener("click", openDialogDictation);
     els.toDe.addEventListener("click", () => translate("de"));
     els.toEn.addEventListener("click", () => translate("en"));
     els.undo.addEventListener("click", () => {
