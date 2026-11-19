@@ -78,7 +78,13 @@
     const types = typeof Office !== "undefined" && Office.DevicePermissionType;
     if (!api || !types) return "nincs-api";
     if (typeof api.requestPermissionsAsync === "function") {
-      const granted = await api.requestPermissionsAsync([types.microphone]);
+      // Az Outlook ezt a függvényt visszahívással (callback) várja, nem Promise-szal.
+      const granted = await new Promise((resolve, reject) => {
+        api.requestPermissionsAsync([types.microphone], (result) => {
+          if (result.status === Office.AsyncResultStatus.Succeeded) resolve(result.value);
+          else reject(result.error || new Error("ismeretlen hiba"));
+        });
+      });
       return granted ? "megadva" : "elutasitva";
     }
     if (typeof api.requestPermissions === "function") {
