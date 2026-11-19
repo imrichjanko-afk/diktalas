@@ -71,21 +71,54 @@
   }
 
   // ---------- Mikrofon-engedély (új Outlook / Outlook a weben) ----------
-  async function ensureMicPermission() {
-    try {
-      if (typeof Office !== "undefined" && Office.devicePermission && Office.DevicePermissionType) {
-        const granted = await Office.devicePermission.requestPermissionsAsync([
-          Office.DevicePermissionType.microphone,
-        ]);
-        if (granted === false) throw new Error("A mikrofon használata nincs engedélyezve.");
-      }
-    } catch (e) {
-      // Ha az API nem érhető el, a böngésző saját engedélykérése fut le.
-      if (e && /nincs engedélyezve/.test(e.message)) throw e;
+  // Az Outlook a bővítmény keretében külön kéri az engedélyt. Ha a felhasználó
+  // korábban elutasította, újra fel kell kínálni a párbeszédablakot.
+  async function requestOfficeMicPermission() {
+    const api = typeof Office !== "undefined" && Office.devicePermission;
+    const types = typeof Office !== "undefined" && Office.DevicePermissionType;
+    if (!api || !types) return "nincs-api";
+    if (typeof api.requestPermissionsAsync === "function") {
+      const granted = await api.requestPermissionsAsync([types.microphone]);
+      return granted ? "megadva" : "elutasitva";
     }
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    if (typeof api.requestPermissions === "function") {
+      // Ennél a változatnál az Outlook engedélyezés után újratölti a panelt.
+      await api.requestPermissions([types.microphone]);
+      return "megadva";
+    }
+    return "nincs-api";
+  }
+
+  async function ensureMicPermission() {
+    let officeResult = "nincs-api";
+    try {
+      officeResult = await requestOfficeMicPermission();
+    } catch (e) {
+      officeResult = "hiba: " + ((e && (e.message || e.code)) || e);
+    }
+    if (officeResult === "elutasitva") {
+      throw new Error("Az Outlook engedélykérő ablakában a mikrofon nem lett engedélyezve. " +
+        "Nyomja meg újra a Diktálás indítása gombot, és válassza az „Engedélyezés” lehetőséget.");
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("Ez a felület nem támogatja a mikrofont.");
+    }
+    try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach((t) => t.stop());
+    } catch (e) {
+      const name = (e && e.name) || "";
+      let hint = "";
+      if (name === "NotAllowedError") {
+        hint = officeResult === "megadva"
+          ? " Az engedélyt megadta: zárja be a Diktálás panelt, nyissa meg újra, és próbálja ismét."
+          : " Az Outlook nem adott engedélyt a bővítménynek (" + officeResult + ").";
+      } else if (name === "NotFoundError") {
+        hint = " Nem található mikrofon – ellenőrizze, hogy csatlakoztatva van-e.";
+      } else if (name === "NotReadableError") {
+        hint = " A mikrofont egy másik program használja (pl. Teams-hívás).";
+      }
+      throw new Error((e && e.message) + " [" + name + "]" + hint);
     }
   }
 
